@@ -106,7 +106,7 @@ public:
 };
 int main()
 {
-    //Melodie A = Melodie("WEED", 90, 1092);
+    //Melodie A = Melodie("x", 90, 1092);
     // A.Afisare();
     Album A("TLOP", "Kanye West");
     A.addMelodie(Melodie("Ultralight Beam", 190, 130002000));
