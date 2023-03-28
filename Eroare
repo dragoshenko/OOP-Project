@@ -1,0 +1,14 @@
+test.cpp: In constructor 'Playlist::Playlist(std::__cxx11::string)':
+test.cpp:94:36: error: no matching function for call to 'Album::Album()'
+     Playlist(string nume_playlist) {
+                                    ^
+test.cpp:62:5: note: candidate: Album::Album(std::__cxx11::string, std::__cxx11::string)
+     Album(string nume_album, string nume_artist){
+     ^~~~~
+test.cpp:62:5: note:   candidate expects 2 arguments, 0 provided
+test.cpp:53:7: note: candidate: Album::Album(const Album&)
+ class Album{
+       ^~~~~
+test.cpp:53:7: note:   candidate expects 1 argument, 0 provided
+test.cpp:53:7: note: candidate: Album::Album(Album&&)
+test.cpp:53:7: note:   candidate expects 1 argument, 0 provided
