@@ -2,6 +2,8 @@
 
 Nume Proiect : Online Music Services using classes in C++
 
+Tema aleasa : Music Player
+
 Lista cu clasele :
 * clasa Melodie - retine Titlul, Durata si numarul de Streamuri si contine supraincarcarea operatorului<<;
 * clasa Gen_Muzical - retine denumirea genului muzical al albumului;
