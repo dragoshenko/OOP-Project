@@ -3,6 +3,8 @@
 #include <vector>
 #include <exception>
 #include <utility>
+#include <memory>
+#include <algorithm>
 using namespace std;
 
 class Exception1 : exception{
@@ -34,6 +36,7 @@ public:
 class Melodie : public interfataMelodie{
 
 private:
+
     string Titlu;
     int Durata;
     int Streams;
@@ -57,7 +60,7 @@ public:
         return Durata;
     }
 
-    int getStreams() override{
+    int getStreams() override {
         if(Streams < 0)
             throw Exception1("Streams nu pot fi mai mici decat 0.");
         return Streams;
@@ -72,16 +75,18 @@ ostream& operator<<(ostream& os, const Melodie& track) {
     return os;
 }
 
-class Gen_Muzical{
+
+
+template <typename t> class Gen_Muzical{
 
 private:
-    string Denumire;
+    t Denumire;
 
 public:
-    Gen_Muzical(string denumire){
+    Gen_Muzical(t denumire){
         Denumire = denumire;
     }
-    string getGen(){
+    t getGen(){
         return Denumire;
     }
 };
@@ -130,7 +135,7 @@ public:
         Numar_Melodii++;
     }
 
-    void addGenre(Gen_Muzical obj){
+    void addGenre(Gen_Muzical<string> obj){
         Gen = obj.getGen();        
     }
 
@@ -240,6 +245,7 @@ void Playlist::addAlbum(Album album, int min_Streams){
         }
     }
 
+
 void Playlist::printAlbums() {
         cout << "Albums in playlist \"" << Nume_Playlist << "\":" << endl;
         for (int i = 0; i < count_albums; i++) {
@@ -287,15 +293,21 @@ void StreamingPlatform::Pay_Per_Stream(){
 
 
 
+
+bool comparareStreams(const unique_ptr<interfataMelodie>& melodie1, const unique_ptr<interfataMelodie>& melodie2) {
+    return melodie1->getStreams() > melodie2->getStreams();
+}
+
 int main()
 {
+
 
     Playlist myPlaylist("Charts");
     //Album A("TLOP", "Kanye West");  
     
     ExtendedGenuri A("TLOP", "Kanye West", 2016, "Experimental Hip Hop, Trap");
     A.incNumarAlbume();
-    A.addGenre(Gen_Muzical("Experimental Hip Hop"));
+    A.addGenre(Gen_Muzical<string>("Experimental Hip Hop"));
     try {
         A.addMelodie(Melodie("Ultralight Beam", 190, 13000200));
         A.addMelodie(Melodie("Father Stretch My Hands Pt. 1", 190, 9482739));
@@ -323,7 +335,7 @@ int main()
 
     ExtendedGenuri B("Blonde", "Frank Ocean", 2016, "Alternative R&B, Art Pop");
     B.incNumarAlbume();
-    B.addGenre(Gen_Muzical("Alternative R&B"));
+    B.addGenre(Gen_Muzical<string>("Alternative R&B"));
     try{
         B.addMelodie(Melodie("Nikes", 190, 500300));
         B.addMelodie(Melodie("Ivy", 190, 120009));
@@ -347,7 +359,17 @@ int main()
 
     myPlaylist.printAlbums();
 
-    
+    vector<unique_ptr<interfataMelodie>> melodii;
+    melodii.push_back(make_unique<Melodie>("Blood On The Leaves",100,150000000));
+    melodii.push_back(make_unique<Melodie>("On Sight",150,48000000));
+    melodii.push_back(make_unique<Melodie>("Send It Up",120,26528198));
+
+    cout << endl;
+    sort(melodii.begin(), melodii.end(), comparareStreams);
+
+    for(auto& m : melodii){
+        cout << m->getTitlu() << endl;
+    }
     
     return 0;
 }
