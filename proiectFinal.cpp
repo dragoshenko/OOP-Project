@@ -1,11 +1,42 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <exception>
+#include <utility>
+#include <memory>
+#include <algorithm>
 using namespace std;
 
-class Melodie{
+class Exception1 : exception{
+private:
+    string Mesaj;
+
+public:
+    Exception1(string m) : Mesaj(m){}
+
+    const char* what() const throw() override{
+        return Mesaj.c_str();
+    }
+};
+
+
+class interfataMelodie{
+public:
+
+    virtual string getTitlu() = 0;
+
+    virtual int getDurata() = 0;
+
+    virtual int getStreams() = 0;
+
+    virtual ~interfataMelodie(){}
+};
+
+
+class Melodie : public interfataMelodie{
 
 private:
+
     string Titlu;
     int Durata;
     int Streams;
@@ -17,16 +48,21 @@ public:
         Streams = streams;
     }
     
+    virtual ~Melodie(){}
 
-    string getTitlu(){
+    string getTitlu() override{
         return Titlu;
     }
 
-    int getDurata(){
+    int getDurata() override{
+        if(Durata <= 0)
+            throw Exception1("Durata nu poate fi mai mica sau egala cu 0.");
         return Durata;
     }
 
-    int getStreams(){
+    int getStreams() override {
+        if(Streams < 0)
+            throw Exception1("Streams nu pot fi mai mici decat 0.");
         return Streams;
     }
 
@@ -39,16 +75,18 @@ ostream& operator<<(ostream& os, const Melodie& track) {
     return os;
 }
 
-class Gen_Muzical{
+
+
+template <typename t> class Gen_Muzical{
 
 private:
-    string Denumire;
+    t Denumire;
 
 public:
-    Gen_Muzical(string denumire){
+    Gen_Muzical(t denumire){
         Denumire = denumire;
     }
-    string getGen(){
+    t getGen(){
         return Denumire;
     }
 };
@@ -61,7 +99,9 @@ private:
     vector<Melodie> tracks;
     int Streams_Album = 0;
     int Durata_Totala = 0;
+    static int Numar_Albume;
     string Gen;
+    static int Numar_Melodii;
 
 public:
     Album(string nume_album, string nume_artist){
@@ -70,27 +110,63 @@ public:
     }
 
     Album(){}
+
+    static void printHeader() {
+        cout << "-------------------------------------------------------------------------------------" << endl;
+    }
     
-    void addGenre(Gen_Muzical obj){
+    static void printFooter() {
+        cout << "-------------------------------------------------------------------------------------" << endl;
+    }
+
+    static int getNumarAlbume(){
+        return Numar_Albume;
+    }
+
+    static int incNumarAlbume(){
+        Numar_Albume++;
+    }
+
+    static int getNumarMelodii(){
+        return Numar_Melodii;
+    }
+
+    static int incNumarMelodii(){
+        Numar_Melodii++;
+    }
+
+    void addGenre(Gen_Muzical<string> obj){
         Gen = obj.getGen();        
     }
 
     void addMelodie(Melodie track){
+        incNumarMelodii();
         tracks.push_back(track);
         Streams_Album += track.getStreams();
         Durata_Totala += track.getDurata();
+        if(Durata_Totala <= 0)
+            throw Exception1("Durata nu poate fi mai mica sau egala cu 0.");
+        if(getNumarMelodii() > 200)
+            throw out_of_range("Numar maxim de melodii a fost intrecut.");
     }
+       
 
     int getTotalStreams(){
+        if(Streams_Album < 0)
+            throw Exception1("Streams nu pot fi mai mici decat 0.");
         return Streams_Album;
     }
 
     void printTracklisting() const {
-        cout << "Tracklistul albumului " << "'" << Nume_Album << "'" << " (" << Gen << ")" << " (" << Durata_Totala << " de " << "secunde" << ")" << " de " << Nume_Artist << " :" << endl;
+        printHeader();
+        cout << "Tracklistul albumului" << " " << Numar_Albume << " " << "'" << Nume_Album << "'" << " (" << Gen << ")" << " (" << Durata_Totala << " de " << "secunde" << ")" << " de " << Nume_Artist << " :" << endl;
         for (int i = 0; i < tracks.size(); i++){
             cout << i+1 << ". " << tracks[i] << endl;
         }
+        printFooter();
     }
+
+
     
     string getNumeAlbum(){
         return Nume_Album;
@@ -104,6 +180,43 @@ public:
         return Streams_Album;
     }
 
+};
+
+int Album::Numar_Albume = 0;
+
+int Album::Numar_Melodii = 0;
+
+class ExtendedAlbum : public Album {
+private:
+    int Year;
+
+public:
+    ExtendedAlbum(string nume_album, string nume_artist, int year) : Album(nume_album, nume_artist) {
+        Year = year;
+    }
+
+    int getYear() const {
+        return Year;
+    }
+
+    virtual void printExtended() = 0;
+};
+
+class ExtendedGenuri : public ExtendedAlbum {
+private:
+    string Genuri;
+
+public:
+    ExtendedGenuri(string nume_album, string nume_artist, int year, string genuri) : ExtendedAlbum(nume_album, nume_artist, year) {
+        Genuri = genuri;
+    }
+    
+    string getGenuri() {
+        return Genuri;
+    }
+    void printExtended() override {
+        cout << "Extended album: " << getNumeAlbum() << " by " << getNumeArtist() << " (" << getYear() << ")" << " (" << getGenuri() << ")" << endl;
+    }
 };
 
 class Playlist{
@@ -131,6 +244,7 @@ void Playlist::addAlbum(Album album, int min_Streams){
             count_albums++;
         }
     }
+
 
 void Playlist::printAlbums() {
         cout << "Albums in playlist \"" << Nume_Playlist << "\":" << endl;
@@ -179,19 +293,34 @@ void StreamingPlatform::Pay_Per_Stream(){
 
 
 
+
+bool comparareStreams(const unique_ptr<interfataMelodie>& melodie1, const unique_ptr<interfataMelodie>& melodie2) {
+    return melodie1->getStreams() > melodie2->getStreams();
+}
+
 int main()
 {
 
-    Playlist myPlaylist("Charts");
-    Album A("TLOP", "Kanye West");  
-    
 
-    A.addGenre(Gen_Muzical("Experimental Hip Hop"));
-    A.addMelodie(Melodie("Ultralight Beam", 190, 13000200));
-    A.addMelodie(Melodie("Father Stretch My Hands Pt. 1", 190, 9482739));
-    A.addMelodie(Melodie("Pt. 2", 210, 32198590));
-    A.addMelodie(Melodie("Famous", 150, 9828235));
+    Playlist myPlaylist("Charts");
+    //Album A("TLOP", "Kanye West");  
+    
+    ExtendedGenuri A("TLOP", "Kanye West", 2016, "Experimental Hip Hop, Trap");
+    A.incNumarAlbume();
+    A.addGenre(Gen_Muzical<string>("Experimental Hip Hop"));
+    try {
+        A.addMelodie(Melodie("Ultralight Beam", 190, 13000200));
+        A.addMelodie(Melodie("Father Stretch My Hands Pt. 1", 190, 9482739));
+        A.addMelodie(Melodie("Pt. 2", 210, 32198590));
+        A.addMelodie(Melodie("Famous", 150, 9828235));
+
+    }catch (Exception1& e){
+        cout << "Eroare" << e.what() << endl;
+
+    }
+
     myPlaylist.addAlbum(A, 1000000);
+    A.printExtended();
     A.printTracklisting();
 
     cout << endl;
@@ -202,13 +331,22 @@ int main()
     
     cout << endl;
 
-    Album B("Blonde", "Frank Ocean");
-    B.addGenre(Gen_Muzical("Alternative R&B"));
-    B.addMelodie(Melodie("Nikes", 190, 500300));
-    B.addMelodie(Melodie("Ivy", 190, 120009));
-    B.addMelodie(Melodie("Pink + White", 210, 3220));
-    B.addMelodie(Melodie("Nights", 150, 98223));
+    //Album B("Blonde", "Frank Ocean");
+
+    ExtendedGenuri B("Blonde", "Frank Ocean", 2016, "Alternative R&B, Art Pop");
+    B.incNumarAlbume();
+    B.addGenre(Gen_Muzical<string>("Alternative R&B"));
+    try{
+        B.addMelodie(Melodie("Nikes", 190, 500300));
+        B.addMelodie(Melodie("Ivy", 190, 120009));
+        B.addMelodie(Melodie("Pink + White", 210, 3220));
+        B.addMelodie(Melodie("Nights", 150, 98223));
+    }catch (Exception1& e){
+        cout << "Eroare" << e.what() << endl;
+
+    }
     myPlaylist.addAlbum(B, 1000000);
+    B.printExtended();
     B.printTracklisting();
 
     cout << endl;
@@ -220,6 +358,18 @@ int main()
     cout << endl;
 
     myPlaylist.printAlbums();
+
+    vector<unique_ptr<interfataMelodie>> melodii;
+    melodii.push_back(make_unique<Melodie>("Blood On The Leaves",100,150000000));
+    melodii.push_back(make_unique<Melodie>("On Sight",150,48000000));
+    melodii.push_back(make_unique<Melodie>("Send It Up",120,26528198));
+
+    cout << endl;
+    sort(melodii.begin(), melodii.end(), comparareStreams);
+
+    for(auto& m : melodii){
+        cout << m->getTitlu() << endl;
+    }
     
     return 0;
 }
